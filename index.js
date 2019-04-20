@@ -21,27 +21,21 @@ app.get('/', function (req, res) {
 app.post('/', urlencodedParser, function (req, res) {
     var url = "mongodb://localhost:27017";
 
-    MongoClient.connect(url, function (err, client) {
+    MongoClient.connect(url, async function (err, client) {
         if (err) throw err;
 
         var db = client.db('login');
-        
-        //MongoDB
-        db.collection('data').findOne({}, function (err, result) {
 
-            if (err) throw err;
-            console.log(`Login: ${req.body.user}`);
-            console.log(`Password: ${req.body.pass}`);
+        //MongoDB
+        const users = await db.collection('data').find({user: req.body.user}).toArray();
+        if (users.length) {
+            const [user] = users;
+            const isValid = await bcrypt.compare(req.body.pass, user.pass);
             
-            //Crypt password
-            bcrypt.compare(req.body.pass, result.pass, (err, res) => {
-                if (err) throw err;
-                if(req.body.user === result.user && res == true) {
-                    console.log('Welcome');
-                } else console.log("User name or password incorrect");
-            });
-            client.close();
-        });
+            
+        } else {
+            res.end('FAIL');
+        }
     });
     res.render('index');
 });
