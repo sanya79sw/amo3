@@ -1,11 +1,14 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const MongoClient = require("mongodb").MongoClient;
 const bcrypt = require('bcrypt');
-const MongoClient = require('mongodb').MongoClient;
 
-const app = express();
 
-const urlencodedParser = bodyParser.urlencoded({ extended: false });
+var urlencodedParser = bodyParser.urlencoded({
+    extended: false
+});
+
+var app = express();
 
 app.set('view engine', 'ejs');
 
@@ -17,31 +20,32 @@ app.get('/', (req, res) => {
 
 app.get('/welcome', (req, res) => {
     res.render('welcome');
-});
+})
 
 app.post('/', urlencodedParser, (req, res) => {
-
-    const url = 'mongodb://localhost:27017';
+    var url = "mongodb://localhost:27017";
 
     MongoClient.connect(url, async function (err, client) {
-        if(err) throw err;
-    
-        const db = client.db('login');
-        const users = await db.collection('data').find({ user: req.body.user }).toArray();
+        if (err) throw err;
 
-        if(users.length) {
-            let [user] = users;
-            bcrypt.compare(req.body.pass, user.pass, (err, bool) => {
-                if(err) throw err;
-                if(bool) {
-                    res.redirect('/welcome');
-                }
-            });
+        var db = client.db('login');
+
+        //MongoDB
+        const users = await db.collection('data').find({user: req.body.user}).toArray();
+        if (users.length) {
+            const [user] = users;
+            const isValid = await bcrypt.compare(req.body.pass, user.pass);
+            console.log(isValid);
+            if(isValid) {
+                res.redirect('/welcome');
+            } else {
+                res.redirect('/');
+            }
+            
+        } else {
+            res.end('FAIL');
         }
-        client.close();
     });
 });
-
-
 
 app.listen(3000);
