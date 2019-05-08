@@ -39,11 +39,12 @@ app.post('/', urlencodedParser, (req, res) => {
             if(isValid) {
                 res.redirect('/welcome');
             } else {
-                res.redirect('/');
+                res.sendFile(__dirname+'/views/' + 'error.html');
+                
             }
             
         } else {
-            res.end('FAIL');
+            res.sendFile(__dirname+'/views/' + 'error.html');            
         }
     });
 });
